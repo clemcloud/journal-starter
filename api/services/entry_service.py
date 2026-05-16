@@ -57,11 +57,16 @@ class EntryService:
         logger.debug("Entry %s updated", entry_id)
         return updated_data
 
-    async def delete_entry(self, entry_id: str) -> None:
+    async def delete_entry(self, entry_id: str) -> dict[str, Any] | None:
         """Deletes a specific entry."""
         logger.info("Deleting entry %s", entry_id)
+        existing_entry = await self.db.get_entry(entry_id)
+        if not existing_entry:
+            logger.warning("Entry %s not found. Delete aborted.", entry_id)
+            return None
         await self.db.delete_entry(entry_id)
         logger.debug("Entry %s deleted", entry_id)
+        return existing_entry
 
     async def delete_all_entries(self) -> None:
         """Deletes all entries."""
