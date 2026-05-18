@@ -1,18 +1,5 @@
-"""Task 4: Implement analyze_journal_entry using any OpenAI-compatible API.
-
-This project mandates the OpenAI Python SDK, which works with:
-  - GitHub Models (default, free, no credit card required)
-  - OpenAI proper
-  - Azure OpenAI
-  - Groq, Together, OpenRouter, Fireworks, DeepInfra
-  - Ollama, LM Studio, vLLM (local)
-  - Anthropic via their OpenAI-compat endpoint
-
-Set OPENAI_API_KEY, and optionally OPENAI_BASE_URL and OPENAI_MODEL
-in your .env file. Settings are loaded by ``api.config.Settings``.
-"""
-
 import json
+import re
 
 from openai import AsyncOpenAI
 
@@ -20,11 +7,6 @@ from api.config import get_settings
 
 
 def _default_client() -> AsyncOpenAI:
-    """Construct the real OpenAI client from application settings.
-
-    Called lazily from ``analyze_journal_entry`` so tests can inject a
-    ``MockAsyncOpenAI`` without ever triggering this code path.
-    """
     settings = get_settings()
     return AsyncOpenAI(
         api_key=settings.openai_api_key,
@@ -32,29 +14,29 @@ def _default_client() -> AsyncOpenAI:
     )
 
 
+def _extract_json(text: str) -> dict:
+    """
+    Safely extract JSON even if model returns extra text.
+    """
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON block from messy response
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        return json.loads(match.group())
+
+    raise ValueError(f"Invalid JSON from LLM: {text}")
+
+
 async def analyze_journal_entry(
     entry_id: str,
     entry_text: str,
     client: AsyncOpenAI | None = None,
 ) -> dict:
-    """Analyze a journal entry using an OpenAI-compatible LLM.
-
-    Args:
-        entry_id: ID of the entry being analyzed (pass through to the result).
-        entry_text: Combined work + struggle + intention text.
-        client: OpenAI client. If None, a default one is constructed from
-            application settings. Tests pass in a MockAsyncOpenAI here; production code
-            in the router calls this with no ``client`` argument.
-
-    Returns:
-        A dict matching AnalysisResponse:
-            {
-                "entry_id":  str,
-                "sentiment": str,   # "positive" | "negative" | "neutral"
-                "summary":   str,
-                "topics":    list[str],
-            }
-    """
     if client is None:
         client = _default_client()
 
@@ -63,15 +45,37 @@ async def analyze_journal_entry(
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant for analyzing journal entries.",
+                "content": (
+                    "You are a strict JSON generator. "
+                    "Return ONLY valid JSON. No explanations. No markdown. No extra text."
+                ),
             },
-            {"role": "user", "content": entry_text},
+            {
+                "role": "user",
+                "content": f"""
+Analyze this journal entry and return ONLY valid JSON.
+
+Text:
+{entry_text}
+
+Format:
+{{
+  "sentiment": "positive | negative | neutral",
+  "summary": "short summary",
+  "topics": ["topic1", "topic2"]
+}}
+""",
+            },
         ],
     )
+
     content = response.choices[0].message.content
-    if content is None:
+
+    if not content:
         raise ValueError("LLM returned empty response")
-    result = json.loads(content)
+
+    result = _extract_json(content)
+
     return {
         "entry_id": entry_id,
         "sentiment": result.get("sentiment", "neutral"),

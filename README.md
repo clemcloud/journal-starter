@@ -1,592 +1,560 @@
-# Topic 5: Capstone - Journal API
+# 📔 Journal API — Cloud Native Capstone Project
 
-[![CI](https://github.com/learntocloud/journal-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/learntocloud/journal-starter/actions/workflows/ci.yml)
+<div align="center">
 
-Welcome to your Python capstone project! You'll be working with a **FastAPI + PostgreSQL** application that helps people track their daily learning journey. This will prepare you for deploying to the cloud in the next phase.
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 
-By the end of this capstone, your API should be working locally and ready for cloud deployment.
+A production-ready REST API for tracking daily learning journeys — built as part of the **Learn to Cloud** bootcamp capstone.
 
-## ⚠️ Important: This Is a Template Repository
+**Author:** Umoru Clement — Cloud Engineer  
+**GitHub:** [@clemcloud](https://github.com/clemcloud)  
+**LinkedIn:** [clementcloud](https://www.linkedin.com/in/clementcloud)
 
-**Do NOT open Pull Requests against this repository (`learntocloud/journal-starter`).**
-
-This repo is a starter template. Your work should happen on **your own fork**:
-
-1. **Fork** this repo to your GitHub account (click the "Fork" button at the top right).
-2. **Clone your fork** — not this repo.
-3. Do all your work and open PRs on **your fork** (`github.com/YOUR_USERNAME/journal-starter`).
-
-PRs opened against `learntocloud/journal-starter` will be closed without review.
+</div>
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
-- [Getting Started](#-getting-started)
-- [Development Workflow](#-development-workflow)
-- [Continuous Integration](#-continuous-integration)
-- [Development Tasks](#-development-tasks)
-- [Data Schema](#-data-schema)
-- [AI Analysis Guide](#-ai-analysis-guide)
-- [Troubleshooting](#-troubleshooting)
-- [What To Do If the Upstream Repo Has Changed](#-what-to-do-if-the-upstream-repo-has-changed)
-- [Extras](#-extras)
-- [License](#-license)
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Data Schema](#data-schema)
+- [Getting Started](#getting-started)
+- [API Endpoints](#api-endpoints)
+- [Development Workflow](#development-workflow)
+- [Testing](#testing)
+- [AI Analysis](#ai-analysis)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
+## 🔍 Overview
 
-- Git installed on your machine
-- Docker Desktop installed and running
-- VS Code with the Dev Containers extension
+The Journal API helps developers track their daily learning journey. Each entry captures three things — what you worked on, what you struggled with, and what you plan to do next. The API also includes an AI-powered analysis feature that uses GitHub Models to return sentiment, a summary, and key topics from each entry.
 
-### 1. Fork and Clone the Repository
+This project demonstrates real-world backend development practices:
 
-Run these commands on your **host machine** (your local terminal, not inside a container):
+- Clean architecture separating routers, services, and models
+- Input validation with Pydantic `StringConstraints`
+- AI integration using the OpenAI SDK with GitHub Models
+- Containerized development with Docker Dev Containers
+- Automated testing with 50 tests covering all endpoints
+- CI/CD with GitHub Actions running on every push and PR
 
-1. **Fork this repository** to your GitHub account by clicking the "Fork" button at the top right of this page. This creates your own copy of the project under your GitHub account.
+---
 
-   > ⚠️ **Important:** Always clone **your fork**, not this original repository. All your work and Pull Requests should happen on your fork. Do **not** open PRs against the original `learntocloud/journal-starter` repo.
+## 🛠️ Tech Stack
 
-1. **Clone your fork** to your local machine (replace `YOUR_USERNAME` with your actual GitHub username):
+| Technology | Purpose |
+|------------|---------|
+| **FastAPI** | High-performance Python web framework |
+| **PostgreSQL** | Relational database for persistent storage |
+| **Docker** | Containerized development and deployment |
+| **Dev Containers** | Consistent development environment across machines |
+| **Pydantic** | Data validation and settings management |
+| **OpenAI SDK** | AI-powered entry analysis via GitHub Models |
+| **pytest** | Automated testing framework |
+| **GitHub Actions** | CI/CD pipeline — lint, type check, and test on every push |
+| **AWS CLI** | Cloud CLI pre-configured in the Dev Container |
+| **uv** | Fast Python package manager |
+| **Ruff** | Python linter and formatter |
+| **Pyright** | Static type checker |
 
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/journal-starter.git
-   ```
+---
 
-   **Verify your remote** points to your fork (not `learntocloud`):
-   ```bash
-   git remote -v
-   # Should show: origin  https://github.com/YOUR_USERNAME/journal-starter.git
-   ```
-
-1. **Navigate into the project folder**:
-
-   ```bash
-   cd journal-starter
-   ```
-
-1. **Open in VS Code**:
-
-   ```bash
-   code .
-   ```
-
-> 💡 **Enable GitHub Actions on your fork:** Forks have GitHub Actions workflows disabled by default. Go to the **Actions** tab on your fork and click **"I understand my workflows, go ahead and enable them"** to activate CI.
-
-### 2. Configure Your Environment (.env)
-
-Environment variables live in a `.env` file (which is **git-ignored** so you don't accidentally commit secrets). This repo ships with a template named `.env-sample`.
-
-Copy the sample file to create your real `.env`. Run this from the **project root on your host machine**:
-
-```bash
-cp .env-sample .env
-```
-
-The sample already contains `DATABASE_URL` (pointing at the devcontainer's
-Postgres service) and a placeholder for `OPENAI_API_KEY`. Leave the
-placeholder in place for Tasks 1–3; you'll replace it with a real token
-from your chosen LLM provider when you reach [Task 4](#task-4--ai-powered-entry-analysis).
-
-> **Why is the placeholder needed?** The app uses [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
-> to validate configuration at startup. If `OPENAI_API_KEY` is missing
-> entirely, `Settings()` raises a `ValidationError` before FastAPI boots.
-> Any non-empty string satisfies that validation — tests never call a real
-> LLM because Task 4 is exercised with an injected mock client.
-
-### 3. Set Up Your Development Environment
-
-1. **Install the Dev Containers extension** in VS Code (if not already installed)
-2. **Reopen in container**: When VS Code detects the `.devcontainer` folder, click "Reopen in Container"
-   - Or use Command Palette (`Cmd/Ctrl + Shift + P`): `Dev Containers: Reopen in Container`
-3. **Wait for setup**: The API container will automatically install Python, dependencies, and configure your environment.
-   The PostgreSQL Database container will also automatically be created.
-
-### 4. Verify the PostgreSQL Database Is Running
-
-In a terminal on your **host machine** (not inside VS Code), run:
-
-```bash
-docker ps
-```
-
-You should see the postgres service running.
-
-### 5. Run the API
-
-In the **VS Code terminal** (inside the dev container), verify you're in the **project root**:
-
-```bash
-pwd
-# Should output: /workspaces/journal-starter (or similar)
-```
-
-Then start the API from the **project root**:
-
-```bash
-./start.sh
-```
-
-### 6. Test Everything Works! 🎉
-
-1. **Visit the API docs**: http://localhost:8000/docs
-1. **Create your first entry** In the Docs UI Use the POST `/entries` endpoint to create a new journal entry.
-1. **View your entries** using the GET `/entries` endpoint to see what you've created!
-
-**🎯 Once you can create and see entries, you're ready to start the development tasks!**
-
-## 🔄 Development Workflow
-
-This project comes with several features **already built** for you — creating entries, listing entries, updating, and deleting all entries. The remaining features are left for you to implement.
-
-We have provided tests so you can verify your implementations are correct without manual testing. **When you first run the tests, some will pass (for the pre-built features) and some will fail (for the features you need to build).** Your goal is to make all tests pass.
-
-> 📍 **Where to run commands:** All commands in this section should be run from the **project root** in the **VS Code terminal** (inside the dev container). Do **not** `cd` into subdirectories like `api/` or `tests/` — run everything from the top-level project folder.
-
-### First-Time Setup
-
-From the **project root** in the VS Code terminal, install dev dependencies:
-
-```bash
-uv sync --all-extras
-```
-
-Install the pre-commit hooks so ruff runs automatically on every commit:
-
-```bash
-uv run pre-commit install
-```
-
-Then run the tests to see the starting state:
-
-```bash
-uv run pytest
-```
-
-You should see output with **18 failing** tests — one group per task you
-still have to complete:
+## 🏗️ Architecture
 
 ```
-FAILED tests/test_logging.py::test_root_logger_is_configured_at_info
-FAILED tests/test_logging.py::test_api_main_installs_stream_handler_with_formatter
-FAILED tests/test_logging.py::test_api_main_emits_startup_log
-FAILED tests/test_api.py::TestGetSingleEntry::test_get_entry_by_id_success
-FAILED tests/test_api.py::TestGetSingleEntry::test_get_entry_not_found
-FAILED tests/test_api.py::TestDeleteEntry::test_delete_entry_success
-FAILED tests/test_api.py::TestDeleteEntry::test_delete_entry_not_found
-FAILED tests/test_models.py::TestEntryCreateValidation::test_empty_string_rejected
-FAILED tests/test_models.py::TestEntryCreateValidation::test_whitespace_only_rejected
-FAILED tests/test_models.py::TestEntryCreateValidation::test_whitespace_stripped_from_valid_input
-FAILED tests/test_models.py::TestEntryUpdateModel::test_all_fields_optional
-FAILED tests/test_models.py::TestEntryUpdateModel::test_partial_update
-FAILED tests/test_models.py::TestEntryUpdateModel::test_oversize_field_rejected
-FAILED tests/test_api.py::TestUpdateEntry::test_update_rejects_oversize_field
-FAILED tests/test_api.py::TestUpdateEntry::test_update_rejects_empty_string
-FAILED tests/test_llm_service.py::test_analyze_entry_actually_calls_llm
-FAILED tests/test_llm_service.py::test_analyze_entry_sends_entry_text_in_prompt
-FAILED tests/test_llm_service.py::test_analyze_entry_returns_valid_analysis_response
-===================== 18 failed, 32 passed =====================
+┌─────────────────────────────────────────────────────┐
+│                    Client Request                    │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│                  FastAPI Router                      │
+│          api/routers/journal_router.py               │
+│     (Receives requests, returns responses)           │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│                 Pydantic Models                      │
+│              api/models/entry.py                     │
+│     (Validates incoming data automatically)          │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│                  Entry Service                       │
+│           api/services/entry_service.py              │
+│              (All business logic lives here)         │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│              PostgreSQL Database                     │
+│         (Running in Docker Dev Container)            │
+└─────────────────────────────────────────────────────┘
 ```
 
-The passing tests cover features that are **already built** for you
-(creating entries, listing entries, updating, deleting all entries).
-The 18 failing tests correspond to Tasks 1–4 below — your job is to
-turn all of them green.
+For AI analysis requests, the flow extends:
 
-### For Each Task
+```
+Entry Service → LLM Service → GitHub Models API → Returns Analysis
+```
 
-1. **Create a branch**
-
-   [Branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches) let you work on features in isolation without affecting the main codebase. From the **project root**, create one for each task:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Implement the feature**
-
-   Write your code in the `api/` directory. Check the TODO comments in the files for guidance on what to implement.
-
-3. **Run the tests**
-
-   After implementing a feature, run the tests from the **project root** to check if your implementation is correct:
-   ```bash
-   uv run pytest
-   ```
-   [pytest](https://docs.pytest.org/) is a testing framework that runs automated tests to verify your code works as expected.
-
-   - **Tests failing?** Read the error messages — they tell you exactly what's wrong (e.g., `assert 501 == 200` means your endpoint is still returning "Not Implemented").
-   - **Tests passing?** Great, your implementation is correct! Move on to the next step.
-
-   **Example: Before implementing GET /entries/{entry_id}:**
-   ```
-   FAILED tests/test_api.py::TestGetSingleEntry::test_get_entry_by_id_success - assert 501 == 200
-   FAILED tests/test_api.py::TestGetSingleEntry::test_get_entry_not_found - assert 501 == 404
-   ```
-
-   **After implementing it correctly:**
-   ```
-   tests/test_api.py::TestGetSingleEntry::test_get_entry_by_id_success PASSED
-   tests/test_api.py::TestGetSingleEntry::test_get_entry_not_found PASSED
-   ```
-
-   > 💡 **Tip:** Use `uv run pytest -v` for verbose output to see each test's pass/fail status, or `uv run pytest -v --tb=short` to also see concise error details.
-
-   **Run the linter** from the **project root** to check code style and catch common mistakes:
-   ```bash
-   uv run ruff check .
-   ```
-   A linter is a tool that analyzes your code for potential errors, bugs, and style issues without running it. [Ruff](https://docs.astral.sh/ruff/) is a fast Python linter that checks for things like unused imports, incorrect syntax, and code that doesn't follow [Python style conventions (PEP 8)](https://pep8.org/).
-
-   **Run the formatter** to auto-format your code (CI also checks formatting):
-   ```bash
-   uv run ruff format .
-   ```
-
-   > 💡 **Tip:** If you ran `uv run pre-commit install` earlier, both `ruff check` and `ruff format` run automatically on every commit.
-
-   **Run the type checker** from the **project root** to ensure proper type annotations:
-   ```bash
-   uv run pyright
-   ```
-   A type checker verifies that your code uses [type hints](https://docs.python.org/3/library/typing.html) correctly. Type hints (like `def get_entry(entry_id: str) -> dict:`) help catch bugs early by ensuring you're passing the right types of data to functions. [Pyright](https://github.com/microsoft/pyright) is Microsoft's fast Python type checker.
-
-4. **Commit and push** (only after tests pass!)
-
-   Once the tests for your feature are passing, [commit](https://docs.github.com/en/get-started/using-git/about-commits) your changes and push to GitHub. Run from the **project root**:
-
-   ```bash
-   git add .
-   ```
-
-   ```bash
-   git commit -m "Implement feature X"
-   ```
-
-   ```bash
-   git push -u origin feature/your-feature-name
-   ```
-
-5. **Create a Pull Request (on your fork)**
-
-   Go to **your fork** on GitHub (`github.com/YOUR_USERNAME/journal-starter`) and open a [Pull Request (PR)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to merge your feature branch into **your own** `main` branch.
-
-   > ⚠️ **Do NOT open PRs against the original `learntocloud/journal-starter` repository.** Your PR should merge into your fork's `main` branch. When creating the PR, make sure the "base repository" is `YOUR_USERNAME/journal-starter`, not `learntocloud/journal-starter`.
-
-   Example:
-
-   ![Core Base Repository Selection](docs/pr_example.png)
-
-> ⚠️ Do not modify the test files. Make the tests pass by implementing features in the `api/` directory. If a test is failing, it means there's something left to implement — read the error message for clues!
-
-## 🤖 Continuous Integration
-
-Every push and pull request runs the GitHub Actions workflow in
-`.github/workflows/ci.yml`, which has two jobs:
-
-| Job  | What it checks | How to reproduce locally |
-|------|----------------|--------------------------|
-| `lint` | `ruff check`, `ruff format --check`, `pyright` | `uv run ruff check . && uv run ruff format --check . && uv run pyright` |
-| `test` | `pytest -v` against a real Postgres 16 service container, with `database_setup.sql` applied | `uv run pytest -v` |
-
-Both jobs run on every push to `main` and every PR. Your fork will
-show two green checks on a PR once **all** your implementations are complete
-(i.e., Tasks 1–4 are finished). Intermediate PRs that cover only some
-tasks will still have failing tests in CI — that's expected.
-No secrets are required — the `test` job uses a disposable Postgres
-service container, and Task 4 is exercised entirely with an injected
-mock OpenAI client so CI never calls a real LLM.
-
-## 🎯 Development Tasks
-
-Each task below has a single acceptance check: the listed tests must
-pass (or the listed manual command must succeed for Task 5).
-
-### Task 1 — Logging Setup
-
-- Branch: `feature/logging-setup`
-- Edit: `api/main.py`
-- Acceptance: `uv run pytest tests/test_logging.py` passes
-
-Configure `logging.basicConfig()` in `api/main.py` so the root logger
-ends up at INFO with at least one handler attached. The `journal`
-logger used throughout the service layer must continue to propagate.
-
-### Task 2a — GET Single Entry Endpoint
-
-- Branch: `feature/get-single-entry`
-- Edit: `api/routers/journal_router.py`
-- Acceptance: `uv run pytest tests/test_api.py::TestGetSingleEntry` passes
-
-Implement **GET /entries/{entry_id}** to fetch an entry via
-`entry_service.get_entry(entry_id)` and return 404 when not found.
-
-### Task 2b — DELETE Single Entry Endpoint
-
-- Branch: `feature/delete-entry`
-- Edit: `api/routers/journal_router.py`
-- Acceptance: `uv run pytest tests/test_api.py::TestDeleteEntry` passes
-
-Implement **DELETE /entries/{entry_id}**, returning 404 when the entry
-does not exist.
-
-### Task 3 — Input Validation
-
-- Branch: `feature/input-validation`
-- Edit: `api/models/entry.py`, `api/routers/journal_router.py`
-- Acceptance:
-  - `uv run pytest tests/test_models.py::TestEntryCreateValidation` passes
-  - `uv run pytest tests/test_models.py::TestEntryUpdateModel` passes
-  - `uv run pytest tests/test_api.py::TestUpdateEntry::test_update_rejects_oversize_field` passes
-  - `uv run pytest tests/test_api.py::TestUpdateEntry::test_update_rejects_empty_string` passes
-
-Add validation to `EntryCreate` so empty, whitespace-only, and
-oversize (>256 char) fields are rejected and surrounding whitespace is
-stripped. Hint: `Annotated[str, StringConstraints(...)]` from Pydantic.
-
-Then create an `EntryUpdate` model in the same file with all three
-fields optional and the same validation rules, and wire it into the
-PATCH endpoint in `api/routers/journal_router.py`.
-
-### Task 4 — AI-Powered Entry Analysis
-
-- Branch: `feature/ai-analysis`
-- Edit: `api/services/llm_service.py`
-- Acceptance: `uv run pytest tests/test_llm_service.py` passes
-
-The **POST /entries/{entry_id}/analyze** endpoint in
-`api/routers/journal_router.py` is already wired up — it fetches the
-entry, combines the fields into prompt text, calls
-`analyze_journal_entry()`, and maps errors to appropriate HTTP responses.
-Your job is to implement the LLM call itself in
-`api/services/llm_service.py`.
-
-See [AI Analysis Guide](#-ai-analysis-guide) below for the expected
-response format and LLM provider setup.
-
-### Task 5 — Cloud CLI Setup (manual)
-
-- Branch: `feature/cloud-cli-setup`
-- Edit: `.devcontainer/devcontainer.json`
-- Acceptance: `az --version` / `aws --version` / `gcloud --version`
-  runs successfully in the rebuilt devcontainer
-
-Uncomment exactly one of the cloud CLI features in
-`.devcontainer/devcontainer.json`, rebuild the devcontainer, and
-verify the CLI is installed.
-
-### What the automated tests cover
-
-| Task | Automated? | How the tests verify it |
-|------|------------|-------------------------|
-| 1 — Logging | ✅ | `tests/test_logging.py` inspects the root logger state after importing `api.main` |
-| 2a — GET single | ✅ | `tests/test_api.py::TestGetSingleEntry` via the FastAPI test client |
-| 2b — DELETE single | ✅ | `tests/test_api.py::TestDeleteEntry` via the FastAPI test client |
-| 3 — Input validation | ✅ | `tests/test_models.py` unit tests + `tests/test_api.py::TestUpdateEntry` PATCH validation tests |
-| 4 — AI analysis | ✅ | `tests/test_llm_service.py` injects `MockAsyncOpenAI`; no real network calls |
-| 5 — Cloud CLI | ❌ | Manual verification: run `az --version` / `aws --version` / `gcloud --version` in the rebuilt devcontainer |
+---
 
 ## 📊 Data Schema
 
 Each journal entry follows this structure:
 
-| Field       | Type      | Description                                | Validation                   |
-|-------------|-----------|--------------------------------------------|------------------------------|
-| id          | string    | Unique identifier (UUID)                   | Auto-generated               |
-| work        | string    | What did you work on today?                | Required, max 256 characters |
-| struggle    | string    | What's one thing you struggled with today? | Required, max 256 characters |
-| intention   | string    | What will you study/work on tomorrow?      | Required, max 256 characters |
-| created_at  | datetime  | When entry was created                     | Auto-generated UTC           |
-| updated_at  | datetime  | When entry was last updated                | Auto-updated UTC             |
+| Field | Type | Description | Validation |
+|-------|------|-------------|------------|
+| `id` | string (UUID) | Unique identifier | Auto-generated |
+| `work` | string | What did you work on today? | Required, 1–256 chars, whitespace stripped |
+| `struggle` | string | What did you struggle with? | Required, 1–256 chars, whitespace stripped |
+| `intention` | string | What will you study tomorrow? | Required, 1–256 chars, whitespace stripped |
+| `created_at` | datetime | When the entry was created | Auto-generated UTC |
+| `updated_at` | datetime | When the entry was last updated | Auto-updated UTC |
 
-## 🤖 AI Analysis Guide
+---
 
-For **Task 4: AI-Powered Entry Analysis**, your endpoint should return this format:
+## 🚀 Getting Started
 
-```json
-{
-  "entry_id": "123e4567-e89b-12d3-a456-426614174000",
-  "sentiment": "positive",
-  "summary": "The learner made progress with FastAPI and database integration. They're excited to continue learning about cloud deployment.",
-  "topics": ["FastAPI", "PostgreSQL", "API development", "cloud deployment"],
-  "created_at": "2025-12-25T10:30:00Z"
-}
+### Prerequisites
+
+Before you begin make sure you have the following installed:
+
+- [Git](https://git-scm.com/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+---
+
+### Step 1 — Fork and Clone
+
+Fork this repository to your GitHub account by clicking the **Fork** button at the top right, then clone your fork:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/journal-starter.git
+cd journal-starter
 ```
 
-### Task 4 setup
+Verify your remote points to your fork:
 
-This project mandates the [OpenAI Python SDK](https://github.com/openai/openai-python),
-which works as a drop-in client for any OpenAI-compatible provider:
-
-| Provider | Cost | Notes |
-|----------|------|-------|
-| **GitHub Models** (default, recommended) | Free | Uses your GitHub account, no credit card needed |
-| OpenAI proper | Paid | Standard api.openai.com |
-| Azure OpenAI | Paid | Your Azure subscription |
-| Groq / Together / OpenRouter / Fireworks / DeepInfra | Varies | All expose OpenAI-compatible endpoints |
-| Ollama / LM Studio / vLLM | Free (local) | Run a model on your own machine |
-
-Configure your provider via `.env` — **no GitHub Actions secrets are
-required**, because CI uses an injected mock OpenAI client:
-
+```bash
+git remote -v
+# Should show: origin  https://github.com/YOUR_USERNAME/journal-starter.git
 ```
-OPENAI_API_KEY=<your token or api key>
+
+---
+
+### Step 2 — Configure Environment
+
+Copy the sample environment file:
+
+```bash
+cp .env-sample .env
+```
+
+Open `.env` and update the values:
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/career_journal
+OPENAI_API_KEY=your_github_personal_access_token
 OPENAI_BASE_URL=https://models.inference.ai.azure.com
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-These variables are loaded by [`api/config.py`](api/config.py)'s `Settings`
-class. If you mistype a variable name, `Settings()` will raise a
-`ValidationError` at app startup naming the missing field — no silent
-`None` from `os.getenv` that crashes later.
+> 💡 Generate a free GitHub Personal Access Token at [github.com/settings/tokens](https://github.com/settings/tokens) and use it as your `OPENAI_API_KEY`. No credit card required.
 
-Optional: once your implementation compiles, sanity-check it against
-a real provider with the bundled helper script:
+---
 
-```bash
-uv run python -m scripts.verify_llm
+### Step 3 — Open in Dev Container
+
+Make sure Docker Desktop is running, then open VS Code and press `Ctrl + Shift + P`:
+
+```
+Dev Containers: Reopen in Container
 ```
 
-> **Phase 4 preview:** In Phase 4, you'll migrate this same code to a
-> cloud AI platform (Azure OpenAI, AWS Bedrock, or GCP Vertex AI).
-> Since they all support the OpenAI SDK, the migration is just an
-> environment variable change — no code rewrite needed.
-## 🔧 Troubleshooting
+Wait for the container to build — this automatically installs Python, all dependencies, PostgreSQL, and the AWS CLI.
 
-**API won't start?**
-- Make sure you're running `./start.sh` from the **project root** inside the dev container
-- Check PostgreSQL is running: `docker ps` (on your **host machine**)
-- Restart the database: `docker restart your-postgres-container-name` (on your **host machine**)
-
-**`pydantic_core._pydantic_core.ValidationError` on startup?**
-- One of the required env vars in your `.env` file is missing or mistyped.
-  The error message names the field (e.g. `database_url` or `openai_api_key`).
-  Add it to `.env` — the defaults in [`.env-sample`](.env-sample) are a good
-  starting point — and restart.
-
-**Can't connect to database?**
-- Verify `.env` file exists with correct `DATABASE_URL`
-- Restart dev container: `Dev Containers: Rebuild Container`
-
-**Dev container won't open?**
-- Ensure Docker Desktop is running
-- Try: `Dev Containers: Rebuild and Reopen in Container`
-
-## 🔄 What To Do If the Upstream Repo Has Changed
-
-If you forked this repository and started working on it, but the original `learntocloud/journal-starter` repo has since been updated (e.g. a redesign was merged), your fork is now behind. You have two options.
-
-> **Context:** The capstone redesign changed nearly every core file: the API router, models, services, tests, config, and project dependencies. If you had work in progress, expect conflicts in most files you touched.
+![Dev Container Screenshot](docs/images/devcontainer.png)
 
 ---
 
-### Option A: Start Fresh (Recommended)
+### Step 4 — Start the API
 
-Delete your fork and re-fork. This is the simplest path, especially since the redesign changed the project structure significantly. Your old task code likely won't drop in cleanly anyway.
+Once inside the Dev Container, start the API from the project root:
 
-1. **Save any work you want to keep.** Copy files you changed to a folder outside the repo. Focus on saving the *logic* you wrote (your route handlers, validation code, etc.), not entire files.
+```bash
+./start.sh
+```
 
-2. **Delete your fork** on GitHub:
-   - Go to your fork: `https://github.com/YOUR_USERNAME/journal-starter`
-   - **Settings** > scroll to the bottom > **Delete this repository**
+You should see:
 
-3. **Re-fork** the repository by clicking "Fork" on the original repo: `https://github.com/learntocloud/journal-starter`
-
-4. **Clone your new fork:**
-
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/journal-starter.git
-   cd journal-starter
-   ```
-
-5. **Re-apply your work** by looking at the new file structure and adding your logic back in. Don't copy-paste whole files from your old fork since the structure has changed. Instead, read through the new code and re-implement your task solutions to fit the updated project.
+```
+🎉 Starting FastAPI server...
+📖 API docs will be available at: http://localhost:8000/docs
+INFO: Uvicorn running on http://0.0.0.0:8000
+```
 
 ---
 
-### Option B: Sync Your Fork with Upstream (The Git Learning Opportunity)
+### Step 5 — Explore the API
 
-This is how open-source contributors keep their fork up to date. It's more involved, but it's a valuable skill to learn.
+Visit the interactive API documentation at:
 
-1. **Add the upstream remote** (you only need to do this once):
+```
+http://localhost:8000/docs
+```
 
-   ```bash
-   git remote add upstream https://github.com/learntocloud/journal-starter.git
-   ```
+![Docs Ui Screenshot](docs/images/docsui.png)
 
-   Verify it:
+From the docs UI you can:
+- Create your first journal entry using `POST /entries`
+- View all entries using `GET /entries`
+- Test the AI analysis using `POST /entries/{entry_id}/analyze`
 
-   ```bash
-   git remote -v
-   # origin    https://github.com/YOUR_USERNAME/journal-starter.git (fetch)
-   # origin    https://github.com/YOUR_USERNAME/journal-starter.git (push)
-   # upstream  https://github.com/learntocloud/journal-starter.git (fetch)
-   # upstream  https://github.com/learntocloud/journal-starter.git (push)
-   ```
+![Create an Entry](docs/images/create-entry1.png)
 
-2. **Fetch the latest from upstream:**
 
-   ```bash
-   git fetch upstream
-   ```
 
-3. **Make sure you're on your main branch:**
-
-   ```bash
-   git checkout main
-   ```
-
-4. **Merge upstream changes into your main:**
-
-   ```bash
-   git merge upstream/main
-   ```
-
-5. **Handle merge conflicts.** You will almost certainly get conflicts. Git will list the conflicting files. Here's how to work through them:
-
-   Open each conflicting file and look for conflict markers like this:
-
-   ```
-   <<<<<<< HEAD
-   # your code
-   =======
-   # upstream code
-   >>>>>>> upstream/main
-   ```
-
-   **For this redesign, accept the upstream (incoming) version in most cases.** The project structure changed significantly, so the upstream code is the correct foundation. If you had task work in a conflicting file, take note of what you wrote, accept the upstream version, and then re-add your logic on top of the new structure.
-
-   After resolving all conflicts:
-
-   ```bash
-   git add .
-   git commit -m "Merge upstream changes"
-   ```
-
-6. **Push the updated main to your fork:**
-
-   ```bash
-   git push origin main
-   ```
-
-7. **Update any feature branches** you're working on:
-
-   ```bash
-   git checkout your-feature-branch
-   git merge main
-   # Resolve any conflicts the same way as above
-   ```
-
-> 💡 **Why `merge` instead of `rebase`?** Merge is safer for beginners. It preserves your commit history and is more straightforward when resolving conflicts. Rebase rewrites history, which can cause issues if you've already pushed your branch. Once you're comfortable with Git, feel free to explore `git rebase upstream/main` as an alternative.
+![Create an Entry](docs/images/create-entry2.png)
 
 ---
 
-## 📚 Extras
+## 🔌 API Endpoints
 
-- [Explore Your Database](docs/explore-database.md) - Connect to PostgreSQL and run queries directly
+### Endpoints Overview
+
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| `POST` | `/entries` | Create a new journal entry | 201 |
+| `GET` | `/entries` | Get all journal entries | 200 |
+| `GET` | `/entries/{entry_id}` | Get a single entry by ID | 200 / 404 |
+| `PATCH` | `/entries/{entry_id}` | Partially update an entry | 200 / 404 |
+| `DELETE` | `/entries/{entry_id}` | Delete a single entry | 200 / 404 |
+| `DELETE` | `/entries` | Delete all entries | 200 |
+| `POST` | `/entries/{entry_id}/analyze` | AI analysis of an entry | 200 / 404 / 501 |
+
+---
+
+### Create Entry
+
+```http
+POST /entries
+Content-Type: application/json
+
+{
+    "work": "Studied FastAPI and built my first REST API",
+    "struggle": "Understanding async/await syntax and when to use it",
+    "intention": "Practice PostgreSQL queries and database design"
+}
+```
+
+**Response (201):**
+```json
+{
+    "detail": "Entry created successfully",
+    "entry": {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "work": "Studied FastAPI and built my first REST API",
+        "struggle": "Understanding async/await syntax and when to use it",
+        "intention": "Practice PostgreSQL queries and database design",
+        "created_at": "2026-05-16T14:30:00Z",
+        "updated_at": "2026-05-16T14:30:00Z"
+    }
+}
+```
+
+---
+
+### Get Single Entry
+
+```http
+GET /entries/123e4567-e89b-12d3-a456-426614174000
+```
+
+**Response (200):**
+```json
+{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "work": "Studied FastAPI and built my first REST API",
+    "struggle": "Understanding async/await syntax and when to use it",
+    "intention": "Practice PostgreSQL queries and database design",
+    "created_at": "2026-05-16T14:30:00Z",
+    "updated_at": "2026-05-16T14:30:00Z"
+}
+```
+
+---
+
+### Update Entry (Partial)
+
+Only send the fields you want to update — other fields remain unchanged:
+
+```http
+PATCH /entries/123e4567-e89b-12d3-a456-426614174000
+Content-Type: application/json
+
+{
+    "work": "Studied Docker and containerization"
+}
+```
+
+**Response (200):**
+```json
+{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "work": "Studied Docker and containerization",
+    "struggle": "Understanding async/await syntax and when to use it",
+    "intention": "Practice PostgreSQL queries and database design",
+    "created_at": "2026-05-16T14:30:00Z",
+    "updated_at": "2026-05-16T15:00:00Z"
+}
+```
+
+---
+
+### Validation Error
+
+Empty strings, whitespace-only input, and fields over 256 characters are automatically rejected:
+
+```http
+POST /entries
+Content-Type: application/json
+
+{
+    "work": "",
+    "struggle": "   ",
+    "intention": "Practice more"
+}
+```
+
+**Response (422):**
+```json
+{
+    "detail": [
+        {
+            "type": "string_too_short",
+            "loc": ["body", "work"],
+            "msg": "String should have at least 1 character",
+            "input": ""
+        }
+    ]
+}
+```
+
+---
+
+### AI Analysis
+
+```http
+POST /entries/123e4567-e89b-12d3-a456-426614174000/analyze
+```
+
+**Response (200):**
+```json
+{
+    "entry_id": "123e4567-e89b-12d3-a456-426614174000",
+    "sentiment": "positive",
+    "summary": "The learner made solid progress with FastAPI and REST API development. They are planning to strengthen their database skills next.",
+    "topics": ["FastAPI", "REST API", "async/await", "PostgreSQL"],
+    "created_at": "2026-05-16T14:30:00Z"
+}
+```
+
+![Ai analysis](docs/images/ai-analysis10.png)
+
+
+![Ai analysis](docs/images/ai-analysis11.png)
+---
+
+## 🔄 Development Workflow
+
+This project follows a feature branch workflow — every feature is developed in isolation and merged via a Pull Request.
+
+```bash
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes in the api/ directory
+
+# Run tests — make sure everything passes
+uv run pytest
+
+# Check code style
+uv run ruff check .
+
+# Auto-format code
+uv run ruff format .
+
+# Run type checker
+uv run pyright
+
+# Commit and push
+git add .
+git commit -m "Implement feature X"
+git push -u origin feature/your-feature-name
+```
+
+Then open a Pull Request on GitHub targeting your fork's `main` branch. The CI pipeline runs automatically on every PR.
+
+---
+
+## 🧪 Testing
+
+The project has **50 automated tests** covering all endpoints, models, and services.
+
+```bash
+# Run all tests
+uv run pytest
+
+# Run with verbose output to see each test
+uv run pytest -v
+
+# Run with short error details
+uv run pytest -v --tb=short
+
+# Run a specific test file
+uv run pytest tests/test_api.py
+
+# Run a specific test class
+uv run pytest tests/test_api.py::TestGetSingleEntry
+```
+
+### Test Coverage
+
+| Test File | What it Covers |
+|-----------|---------------|
+| `test_api.py` | All API endpoints — success and error cases |
+| `test_models.py` | Pydantic model validation rules |
+| `test_service.py` | Entry service business logic |
+| `test_logging.py` | Logging configuration |
+| `test_llm_service.py` | AI analysis function with mock client |
+
+---
+
+## 🤖 AI Analysis
+
+The `POST /entries/{entry_id}/analyze` endpoint uses the **OpenAI SDK** with **GitHub Models** to analyze journal entries — completely free with a GitHub account, no credit card required.
+
+### How It Works
+
+The three entry fields are combined into a single prompt and sent to the model:
+
+```python
+# Entry fields are combined into prompt text
+entry_text = f"{entry['work']} {entry['struggle']} {entry['intention']}"
+
+# Sent to GitHub Models via the OpenAI SDK
+messages = [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant for analyzing journal entries."
+    },
+    {
+        "role": "user",
+        "content": entry_text
+    }
+]
+
+response = await client.chat.completions.create(
+    model=get_settings().openai_model,
+    messages=messages
+)
+```
+
+The model returns a JSON response which is parsed and returned as an `AnalysisResponse` containing `entry_id`, `sentiment`, `summary`, `topics`, and `created_at`.
+
+### Setup
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Generate a Personal Access Token
+3. Add it to your `.env` file as `OPENAI_API_KEY`
+
+---
+
+## ⚙️ CI/CD Pipeline
+
+Every push and pull request automatically triggers two GitHub Actions jobs:
+
+| Job | What it Checks | Command |
+|-----|---------------|---------|
+| **Lint** | Code style, formatting, type safety | `ruff check . && ruff format --check . && pyright` |
+| **Test** | All 50 tests against a real PostgreSQL 16 container | `pytest -v` |
+
+Both jobs must pass before merging any PR. No secrets are required — the test job spins up a disposable PostgreSQL container and the AI analysis tests use an injected mock client so no real API calls are made during CI.
+
+---
+
+## 🗺️ Roadmap
+
+This project is being built in phases — each phase adds a new layer of production readiness.
+
+### Phase 2 — Cloud Deployment ☁️
+Deploying the API to AWS using infrastructure as code:
+- [ ] Write production `Dockerfile` and `.dockerignore`
+- [ ] Provision cloud infrastructure with Terraform (`infra/` folder)
+- [ ] Deploy API to AWS
+- [ ] Migrate database to a managed cloud database
+
+### Phase 3 — Production DevOps 🐳
+Orchestrating and automating the full deployment pipeline:
+- [ ] Set up GitHub Actions workflows for automated deployments (`.github/workflows/`)
+- [ ] Write Kubernetes manifests — Deployment, Service, and Secrets (`k8s/` folder)
+- [ ] Configure horizontal pod autoscaling
+- [ ] Integrate Prometheus metrics and Grafana dashboards for observability
+
+### Phase 4 — Security 🔒
+Hardening the application for production:
+- [ ] Add JWT authentication and authorization
+- [ ] Implement rate limiting per user
+- [ ] Add security scanning to the CI pipeline
+- [ ] Configure secrets management best practices
+- [ ] Set up network policies in Kubernetes
+
+---
+
+## 📚 Documentation
+
+As this project grows, detailed documentation for each phase lives in the `docs/` folder:
+
+| Document | Description |
+|----------|-------------|
+| [Getting Started](docs/getting-started.md) | Full local setup guide |
+| [API Reference](docs/api-reference.md) | Complete endpoint documentation |
+| [Architecture](docs/architecture.md) | System design and decisions |
+| [AI Analysis](docs/ai-analysis.md) | How the LLM integration works |
+
+> More docs will be added as each phase is completed.
+
+---
+
+## 👨‍💻 Author
+
+**Umoru Clement — Cloud Engineer**
+
+- GitHub: [@clemcloud](https://github.com/clemcloud)
+- LinkedIn: [clementcloud](https://www.linkedin.com/in/clementcloud)
+
+---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+This project is based on the [Learn to Cloud Journal Starter](https://github.com/learntocloud/journal-starter) template.
 
-Contributions welcome! [Open an issue](https://github.com/learntocloud/journal-starter/issues) to get started.
+---
+
+<div align="center">
+
+⭐ **If you found this project helpful, please give it a star!** ⭐
+
+</div>
