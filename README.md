@@ -11,6 +11,7 @@
 
 A production-ready REST API for tracking daily learning journeys — built as part of the **Learn to Cloud** bootcamp capstone.
 
+**Live API:** [https://journal-starter.duckdns.org/docs](https://journal-starter.duckdns.org/docs)  
 **Author:** Umoru Clement — Cloud Engineer  
 **GitHub:** [@clemcloud](https://github.com/clemcloud)  
 **LinkedIn:** [clementcloud](https://www.linkedin.com/in/clementcloud)
@@ -224,8 +225,6 @@ From the docs UI you can:
 
 ![Create an Entry](docs/images/create-entry1.png)
 
-
-
 ![Create an Entry](docs/images/create-entry2.png)
 
 ---
@@ -373,8 +372,8 @@ POST /entries/123e4567-e89b-12d3-a456-426614174000/analyze
 
 ![Ai analysis](docs/images/ai-analysis10.png)
 
-
 ![Ai analysis](docs/images/ai-analysis11.png)
+
 ---
 
 ## 🔄 Development Workflow
@@ -499,27 +498,38 @@ Both jobs must pass before merging any PR. No secrets are required — the test 
 
 This project is being built in phases — each phase adds a new layer of production readiness.
 
-### Phase 2 — Cloud Deployment ☁️
-Deploying the API to AWS using infrastructure as code:
-- [ ] Write production `Dockerfile` and `.dockerignore`
-- [ ] Provision cloud infrastructure with Terraform (`infra/` folder)
-- [ ] Deploy API to AWS
-- [ ] Migrate database to a managed cloud database
+### ✅ Phase 1 — Local Development
+- FastAPI + PostgreSQL running locally in Docker Dev Containers
+- 50 automated tests passing
+- GitHub Actions CI/CD pipeline
+- AI analysis via GitHub Models
 
-### Phase 3 — Production DevOps 🐳
+### ✅ Phase 2 — Cloud Deployment ☁️
+- VPC with public and private subnets on AWS
+- API server on EC2 with Nginx reverse proxy and TLS
+- PostgreSQL on private EC2 — no public IP
+- AI analysis migrated to Amazon Bedrock (Nova Lite)
+- Live at: [https://journal-starter.duckdns.org](https://journal-starter.duckdns.org)
+
+👉 [View Full Cloud Deployment Guide](docs/cloud-deployment.md)
+
+### 🔄 Phase 3 — Production DevOps 🐳
 Orchestrating and automating the full deployment pipeline:
-- [ ] Set up GitHub Actions workflows for automated deployments (`.github/workflows/`)
-- [ ] Write Kubernetes manifests — Deployment, Service, and Secrets (`k8s/` folder)
-- [ ] Configure horizontal pod autoscaling
-- [ ] Integrate Prometheus metrics and Grafana dashboards for observability
+- [ ] Production `Dockerfile` and `.dockerignore`
+- [ ] GitHub Actions workflows for automated deployments
+- [ ] Kubernetes manifests — Deployment, Service, Secrets (`k8s/` folder)
+- [ ] Prometheus and Grafana observability
 
-### Phase 4 — Security 🔒
+👉 [View DevOps Guide](docs/devops.md) _(coming soon)_
+
+### ⏳ Phase 4 — Security 🔒
 Hardening the application for production:
-- [ ] Add JWT authentication and authorization
-- [ ] Implement rate limiting per user
-- [ ] Add security scanning to the CI pipeline
-- [ ] Configure secrets management best practices
-- [ ] Set up network policies in Kubernetes
+- [ ] JWT authentication and authorization
+- [ ] Rate limiting per user
+- [ ] Security scanning in CI pipeline
+- [ ] Secrets management best practices
+
+👉 [View Security Guide](docs/security.md) _(coming soon)_
 
 ---
 
@@ -529,10 +539,10 @@ As this project grows, detailed documentation for each phase lives in the `docs/
 
 | Document | Description |
 |----------|-------------|
-| [Getting Started](docs/getting-started.md) | Full local setup guide |
-| [API Reference](docs/api-reference.md) | Complete endpoint documentation |
-| [Architecture](docs/architecture.md) | System design and decisions |
-| [AI Analysis](docs/ai-analysis.md) | How the LLM integration works |
+| [☁️ Cloud Deployment Guide](docs/cloud-deployment.md) | Full AWS deployment — EC2, Nginx, TLS, Bedrock, challenges and lessons learned |
+| [🐳 DevOps Guide](docs/devops.md) | Dockerfile, Kubernetes, GitHub Actions, Prometheus, Grafana _(coming soon)_ |
+| [🔒 Security Guide](docs/security.md) | JWT, rate limiting, security scanning _(coming soon)_ |
+| [Explore the Database](docs/explore-database.md) | Connect to PostgreSQL and run queries directly |
 
 > More docs will be added as each phase is completed.
 
